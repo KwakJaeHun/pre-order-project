@@ -10,7 +10,7 @@ class ResponseTest {
 
     @Test
     void responseTest(){
-        Response response = new Response(responseCode.USER_ALREADY_EXIST);
+        Response response = new Response(responseCode.USER_PHONE_ALREADY_EXIST);
         System.out.println(response.isSuccess());
         System.out.println(response.getStateCode());
         System.out.println(response.getDescription());
