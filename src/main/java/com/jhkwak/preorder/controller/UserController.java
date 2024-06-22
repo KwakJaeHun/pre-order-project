@@ -23,8 +23,11 @@ public class UserController {
     // 회원가입
     @PostMapping("/signup")
     @ResponseBody
-    public Response signup(SignupRequestDto requestDto){
-        return userService.signup(requestDto);
+    public ResponseEntity<?> signup(SignupRequestDto requestDto){
+
+        Response response = userService.signup(requestDto);
+
+        return ResponseEntity.ok(response);
     }
 
     // 로그인 페이지
@@ -38,10 +41,11 @@ public class UserController {
     // 로그인
     @PostMapping("/login")
     @ResponseBody
-    public Response login(LoginRequestDto loginRequestDto, HttpServletResponse res){
+    public ResponseEntity<?> login(LoginRequestDto loginRequestDto, HttpServletResponse res){
 
-        return userService.login(loginRequestDto, res);
+        Response response = userService.login(loginRequestDto, res);
 
+        return ResponseEntity.ok(response);
     }
 
     // 로그아웃
@@ -60,9 +64,11 @@ public class UserController {
     // 이메일 인증
     @GetMapping("/verify")
     @ResponseBody
-    public Response emailVerification(@RequestParam String token){
+    public ResponseEntity<?> emailVerification(@RequestParam String token){
 
-        return userService.emailVerification(token);
+        Response response = userService.emailVerification(token);
+
+        return ResponseEntity.ok(response);
 
     }
 }
