@@ -84,7 +84,7 @@ public class JwtUtil {
     }
 
     // JWT 검증
-    public boolean validateToken(String token) {
+    public boolean validateToken(String token, HttpServletResponse response) {
         
         if (token == null || token.isEmpty()) {
             return false;
@@ -106,7 +106,19 @@ public class JwtUtil {
         } catch (IllegalArgumentException e) {
             logger.error("JWT claims is empty, 잘못된 JWT 토큰 입니다.");
         }
+
+        jwtDelete(response);
         return false;
+    }
+    
+    // 검증에 통과하지 못한 토큰은 삭제
+    public void jwtDelete(HttpServletResponse response){
+
+        // Authorization 쿠키 삭제
+        Cookie cookie = new Cookie(this.AUTHORIZATION_HEADER, null);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
     }
 
     // 토큰에서 사용자 정보 가져오기

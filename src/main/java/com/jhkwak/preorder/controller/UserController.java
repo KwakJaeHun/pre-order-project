@@ -49,11 +49,8 @@ public class UserController {
     @ResponseBody
     public ResponseEntity<?> logout(HttpServletResponse response){
 
-        // Authorization 쿠키 삭제
-        Cookie cookie = new Cookie(jwtUtil.AUTHORIZATION_HEADER, null);
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
+        // jwt 삭제
+        jwtUtil.jwtDelete(response);
 
         return ResponseEntity.ok().build();
     }
