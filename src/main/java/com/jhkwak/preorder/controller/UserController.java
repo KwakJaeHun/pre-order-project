@@ -3,9 +3,12 @@ package com.jhkwak.preorder.controller;
 import com.jhkwak.preorder.dto.user.LoginRequestDto;
 import com.jhkwak.preorder.dto.user.SignupRequestDto;
 import com.jhkwak.preorder.entity.Response;
+import com.jhkwak.preorder.jwt.JwtUtil;
 import com.jhkwak.preorder.service.user.UserService;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
     // 회원가입
     @PostMapping("/signup")
@@ -39,6 +43,22 @@ public class UserController {
         return userService.login(loginRequestDto, res);
 
     }
+
+    // 로그아웃
+    @GetMapping("/logout")
+    @ResponseBody
+    public ResponseEntity<?> logout(HttpServletResponse response){
+
+        // Authorization 쿠키 삭제
+        Cookie cookie = new Cookie(jwtUtil.AUTHORIZATION_HEADER, null);
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok().build();
+    }
+    
+    
     
     // 이메일 인증
     @GetMapping("/verify")
