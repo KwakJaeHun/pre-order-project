@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Entity
 @Getter @Setter
@@ -32,6 +33,9 @@ public class User extends TimeStamp {
 
     @Column(nullable = false)
     private String address;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<EmailVerification> emailVerifications;
 
     public User(String name, String email, String password, String phone, String address) {
         this.name = name;

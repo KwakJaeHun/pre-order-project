@@ -16,22 +16,36 @@ public class UserController {
 
     private final UserService userService;
 
-
+    // 회원가입
     @PostMapping("/signup")
     @ResponseBody
     public Response signup(SignupRequestDto requestDto){
         return userService.signup(requestDto);
     }
 
-    @PostMapping("/login")
-    public String login(LoginRequestDto loginRequestDto, HttpServletResponse res){
-        try{
-            userService.login(loginRequestDto, res);
-        }
-        catch(Exception e){
-            return "redirect:/user/login-page?error";
-        }
+    // 로그인 페이지
+    @GetMapping("/login")
+    public String loginPage(){
 
-        return "redirect:/";
+        return "/user/login";
+
+    }
+    
+    // 로그인
+    @PostMapping("/login")
+    @ResponseBody
+    public Response login(LoginRequestDto loginRequestDto, HttpServletResponse res){
+
+        return userService.login(loginRequestDto, res);
+
+    }
+    
+    // 이메일 인증
+    @GetMapping("/verify")
+    @ResponseBody
+    public Response emailVerification(@RequestParam String token){
+
+        return userService.emailVerification(token);
+
     }
 }
