@@ -39,6 +39,8 @@ public class JwtUtil {
     // 로그설정
     public static final Logger logger = LoggerFactory.getLogger("JWT 관련 내용");
 
+    private String tokenValue;
+
     @PostConstruct
     public void init(){
         byte[] bytes = Base64.getDecoder().decode(secretKey);
@@ -83,8 +85,17 @@ public class JwtUtil {
 
     // JWT 검증
     public boolean validateToken(String token) {
+        
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
+        
+        // Bearer 자르기
+        token = substringToken(token);
+        this.tokenValue = token;
+        
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(this.tokenValue);
             return true;
         } catch (SecurityException | MalformedJwtException | SignatureException e) {
             logger.error("Invalid JWT signature, 유효하지 않는 JWT 서명 입니다.");
@@ -101,5 +112,10 @@ public class JwtUtil {
     // 토큰에서 사용자 정보 가져오기
     public Claims getUserInfoFromToken(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+    }
+
+    // 파싱된 토큰 가져오기
+    public String getTokenValue(){
+        return this.tokenValue;
     }
 }
