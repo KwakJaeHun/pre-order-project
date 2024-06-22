@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Entity
 @Getter @Setter
@@ -34,14 +33,31 @@ public class User extends TimeStamp {
     @Column(nullable = false)
     private String address;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
-    private Set<EmailVerification> emailVerifications;
+    @Column(nullable = false, length = 36)
+    private String emailVerificationToken;
 
-    public User(String name, String email, String password, String phone, String address) {
+    @Column(nullable = false)
+    private LocalDateTime emailVerificationExpiresAt = LocalDateTime.now().plusHours(24);
+
+    @Column(nullable = false)
+    private Boolean emailVerifiedStatus = false;
+
+    public User(
+        String name,
+        String email,
+        String password,
+        String phone,
+        String address,
+        String emailVerificationToken,
+        Boolean emailVerifiedStatus
+    )
+    {
         this.name = name;
         this.email = email;
         this.password = password;
         this.phone = phone;
         this.address = address;
+        this.emailVerificationToken = emailVerificationToken;
+        this.emailVerifiedStatus = emailVerifiedStatus;
     }
 }

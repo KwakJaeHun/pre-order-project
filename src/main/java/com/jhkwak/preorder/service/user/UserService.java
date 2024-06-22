@@ -4,10 +4,8 @@ import com.jhkwak.preorder.dto.user.LoginRequestDto;
 import com.jhkwak.preorder.dto.user.SignupRequestDto;
 import com.jhkwak.preorder.entity.Response;
 import com.jhkwak.preorder.entity.ResponseCode;
-import com.jhkwak.preorder.entity.user.EmailVerification;
 import com.jhkwak.preorder.entity.user.User;
 import com.jhkwak.preorder.jwt.JwtUtil;
-import com.jhkwak.preorder.repository.user.EmailVerificationRepository;
 import com.jhkwak.preorder.repository.user.UserRepository;
 import com.jhkwak.preorder.service.mail.MailService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -25,7 +24,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
-    private final EmailVerificationRepository emailVerificationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final MailService mailService;
@@ -51,25 +49,22 @@ public class UserService {
         if(checkPhone.isPresent()){
             return new Response(ResponseCode.USER_PHONE_ALREADY_EXIST);
         }
+
+        // 이메일 인즌 토큰
+        String token = UUID.randomUUID().toString();
         
         // 사용자 등록
-        User user = new User(name, email, password, phone, address);
+        User user = new User(name, email, password, phone, address, token, false);
         userRepository.save(user);
 
         // 인증 이메일 발송
-        sendVerificationEmail(user);
+        sendVerificationEmail(user, token);
 
         return new Response(ResponseCode.USER_CREATE_SUCCESS);
     }
     
     // 인증 이메일 전송
-    public void sendVerificationEmail(User user){
-
-        String token = UUID.randomUUID().toString();
-
-        // 이메일 인증 로그 저장
-        EmailVerification emailVerification = new EmailVerification(user, token, LocalDateTime.now().plusHours(24));
-        emailVerificationRepository.save(emailVerification);
+    public void sendVerificationEmail(User user, String token){
 
         try {
             String url = "http://localhost:8080/user/verify?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8.name());
@@ -86,7 +81,7 @@ public class UserService {
     // 이메일 인증
     @Transactional
     public Response emailVerification(String token) {
-        Optional<EmailVerification> checkToken = emailVerificationRepository.findByTokenAndStatus(token, 'S');
+        Optional<User> checkToken = userRepository.findByEmailVerificationTokenAndEmailVerifiedStatus(token, false);
 
         if(checkToken.isPresent()){
             // 만료시간이 지났으면 인증 메일 재전송 + 확인 필요 응답
@@ -111,15 +106,13 @@ public class UserService {
         // 사용자 확인
         Optional<User> checkUser = userRepository.findByEmail(email);
         if(checkUser.isPresent()){
-
+            
             User user = checkUser.get();
 
-            Optional<EmailVerification> checkVerification = emailVerificationRepository.findByUserIdAndStatus(user.getId(), 'S');
-
             // 이메일 인증을 진행하지 않은 경우
-            if(checkVerification.isPresent()){
+            if(!user.getEmailVerifiedStatus()){
                 // 만료 시간이 지나지 않았으면 인증 확인 응답
-                if(checkExpirationTime(checkVerification.get(), "unUpdate")){
+                if(checkExpirationTime(user, "unUpdate")){
                     return new Response(ResponseCode.REQUIRE_VERIFICATION_EMAIL);
                 }
                 else{
@@ -144,27 +137,32 @@ public class UserService {
     }
 
     // 인증 만료시간 체크
-    private boolean checkExpirationTime(EmailVerification emailVerification, String updateStatus){
-
-        User user = userRepository.findById(emailVerification.getUser().getId()).orElseThrow(()-> new IllegalArgumentException("회원이 존재하지 않습니다."));
+    private boolean checkExpirationTime(User user, String updateStatus){
         
         // 만료 시간이 지났으면 인증 메일 재전송
-        if(LocalDateTime.now().minusHours(24).isAfter(emailVerification.getExpiresAt())){
-            // 만료된 토큰 상태값 업데이트
-            emailVerification.setStatus('D');
-            emailVerificationRepository.save(emailVerification);
-
+        if(LocalDateTime.now().minusHours(24).isAfter(user.getEmailVerificationExpiresAt())){
+            String token = creatToken();
+            // 만료된 토큰 업데이트
+            user.setEmailVerificationToken(token);
+            // 만료 시간 갱신
+            user.setEmailVerificationExpiresAt(LocalDateTime.now().plusHours(24));
+            
             // 인증 메일 재전송
-            sendVerificationEmail(user);
+            sendVerificationEmail(user, token);
             return false;
         }
         else{
             if(updateStatus.equals("update")){
                 // 인증된 토큰 상태값 업데이트
-                emailVerification.setStatus('Y');
+                user.setEmailVerifiedStatus(true);
             }
         }
         
         return true;
+    }
+    
+    // 이메일 인증 토큰 생성
+    public String creatToken(){
+        return UUID.randomUUID().toString();
     }
 }
