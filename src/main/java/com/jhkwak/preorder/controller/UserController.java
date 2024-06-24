@@ -5,7 +5,7 @@ import com.jhkwak.preorder.dto.user.SignupRequestDto;
 import com.jhkwak.preorder.entity.Response;
 import com.jhkwak.preorder.jwt.JwtUtil;
 import com.jhkwak.preorder.service.user.UserService;
-import jakarta.servlet.http.Cookie;
+import com.jhkwak.preorder.service.user.WishListService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +19,7 @@ public class UserController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
-
+    private final WishListService wishListService;
     // 회원가입
     @PostMapping("/signup")
     @ResponseBody
