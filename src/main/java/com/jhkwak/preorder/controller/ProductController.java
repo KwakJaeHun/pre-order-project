@@ -4,14 +4,15 @@ import com.jhkwak.preorder.dto.product.ProductDetailResponseDto;
 import com.jhkwak.preorder.dto.product.ProductRegRequestDto;
 import com.jhkwak.preorder.dto.product.ProductResponseDto;
 import com.jhkwak.preorder.dto.product.WishRequestDto;
+import com.jhkwak.preorder.dto.user.CartRequestDto;
+import com.jhkwak.preorder.dto.user.CartResponseDto;
 import com.jhkwak.preorder.entity.product.Product;
-import com.jhkwak.preorder.jwt.JwtUtil;
+import com.jhkwak.preorder.security.UserDetailImpl;
 import com.jhkwak.preorder.service.product.ProductService;
-import jakarta.servlet.http.HttpServletResponse;
+import com.jhkwak.preorder.service.user.CartService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,8 +23,8 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
-    private final JwtUtil jwtUtil;
-    
+    private final CartService cartService;
+
     @GetMapping("/list")
     public List<ProductResponseDto> productList(){
         return productService.productList();
@@ -41,20 +42,23 @@ public class ProductController {
 
     @PostMapping("/wish-add")
     public ResponseEntity<?> wishAdd(
-            @RequestBody WishRequestDto wishRequestDto,
-            @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-            HttpServletResponse res
+            @AuthenticationPrincipal UserDetailImpl userDetail,
+            @RequestBody WishRequestDto wishRequestDto
     )
     {
 
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
+        productService.wishAdd(userDetail.getUser(), wishRequestDto);
+        return ResponseEntity.ok().build();
+    }
 
-        if(jwtValidate != 0L){
-            productService.wishAdd(jwtValidate, wishRequestDto);
-            return ResponseEntity.ok().build();
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
+    // 장바구니 추가
+    @PostMapping("/cart-add")
+    public ResponseEntity<?> cartRegistration(
+            @AuthenticationPrincipal UserDetailImpl userDetail,
+            @RequestBody CartRequestDto cartRequestDto
+    )
+    {
+        List<CartResponseDto> cartList = cartService.cartRegistration(userDetail.getId(), cartRequestDto);
+        return ResponseEntity.ok(cartList);
     }
 }

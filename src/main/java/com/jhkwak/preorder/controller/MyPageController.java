@@ -4,15 +4,14 @@ import com.jhkwak.preorder.dto.product.WishRequestDto;
 import com.jhkwak.preorder.dto.user.*;
 import com.jhkwak.preorder.entity.Response;
 import com.jhkwak.preorder.entity.ResponseCode;
-import com.jhkwak.preorder.jwt.JwtUtil;
+import com.jhkwak.preorder.security.UserDetailImpl;
 import com.jhkwak.preorder.service.user.CartService;
 import com.jhkwak.preorder.service.user.MyPageService;
 import com.jhkwak.preorder.service.user.WishListService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,202 +22,103 @@ import java.util.List;
 public class MyPageController {
 
     private final MyPageService myPageService;
-    private final JwtUtil jwtUtil;
     private final WishListService wishListService;
     private final CartService cartService;
 
     // 메인
-    @GetMapping("")
-    public ResponseEntity<?> signup(
-        @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-        HttpServletResponse res
-    )
+    @GetMapping("/main")
+    public ResponseEntity<?> mainPage(@AuthenticationPrincipal UserDetailImpl userDetail)
     {
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-
-        if(jwtValidate != 0L){
-            List<UserResponseDto> userInfo  = myPageService.getUserInfo(jwtValidate);
-            return ResponseEntity.ok(userInfo);
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
+        List<UserResponseDto> userInfo  = myPageService.getUserInfo(userDetail.getId());
+        return ResponseEntity.ok(userInfo);
     }
 
     // 주소 업데이트
     @PutMapping("/address")
     public ResponseEntity<?> updateAddress(
-        @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-        HttpServletResponse res,
+        @AuthenticationPrincipal UserDetailImpl userDetail,
         @RequestBody InfoUpdateRequestDto infoUpdateRequestDto
     )
     {
-
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-
-        if(jwtValidate != 0L){
-            myPageService.updateUserInfo(jwtValidate, infoUpdateRequestDto);
-            return ResponseEntity.ok().build();
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
+        System.out.println("저속확인");
+        myPageService.updateUserInfo(userDetail.getId(), infoUpdateRequestDto);
+        return ResponseEntity.ok().build();
     }
 
     // 전화번호 업데이트
     @PutMapping("/phone")
     public ResponseEntity<?> updatePhone(
-        @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-        HttpServletResponse res,
+        @AuthenticationPrincipal UserDetailImpl userDetail,
         @RequestBody InfoUpdateRequestDto infoUpdateRequestDto
     )
     {
-
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-
-        if(jwtValidate != 0L){
-            myPageService.updateUserInfo(jwtValidate, infoUpdateRequestDto);
-            return ResponseEntity.ok().build();
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
+        myPageService.updateUserInfo(userDetail.getId(), infoUpdateRequestDto);
+        return ResponseEntity.ok().build();
     }
 
     // 비밀번호 업데이트
     @PutMapping("/password")
     public ResponseEntity<?> updatePassword(
-        @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-        HttpServletResponse res,
+        @AuthenticationPrincipal UserDetailImpl userDetail,
         @RequestBody InfoUpdateRequestDto infoUpdateRequestDto
     )
     {
-
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-
-        if(jwtValidate != 0L){
-            if(myPageService.updateUserInfo(jwtValidate, infoUpdateRequestDto)){
-                return ResponseEntity.ok().build();
-            }
-            else{
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(new Response(ResponseCode.USER_PASSWORD_WRONG));
-            }
+        if(myPageService.updateUserInfo(userDetail.getId(), infoUpdateRequestDto)){
+            return ResponseEntity.ok().build();
         }
         else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new Response(ResponseCode.USER_PASSWORD_WRONG));
         }
     }
 
     // wishList
     @GetMapping("/wish-list")
-    public ResponseEntity<?> wishList(
-        @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-        HttpServletResponse res
-    )
+    public ResponseEntity<?> wishList(@AuthenticationPrincipal UserDetailImpl userDetail)
     {
-
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-        if(jwtValidate != 0L){
-            List<WishListResponseDto> wishlist = wishListService.getWishList(jwtValidate);
-            return ResponseEntity.ok(wishlist);
-
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
+        List<WishListResponseDto> wishlist = wishListService.getWishList(userDetail.getId());
+        return ResponseEntity.ok(wishlist);
     }
 
     // wish 삭제
     @DeleteMapping("/wish-delete")
     public ResponseEntity<?> wishDelete(
-            @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-            HttpServletResponse res,
+            @AuthenticationPrincipal UserDetailImpl userDetail,
             @RequestBody WishRequestDto wishRequestDto
     )
     {
-
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-        if(jwtValidate != 0L){
-            List<WishListResponseDto> wishlist = wishListService.wishDelete(jwtValidate, wishRequestDto);
-            return ResponseEntity.ok(wishlist);
-
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
+        List<WishListResponseDto> wishlist = wishListService.wishDelete(userDetail.getUser(), wishRequestDto);
+        return ResponseEntity.ok(wishlist);
     }
 
     // 장바구니
     @GetMapping("/cart-list")
-    public ResponseEntity<?> cartList(
-        @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-        HttpServletResponse res
-    )
+    public ResponseEntity<?> cartList(@AuthenticationPrincipal UserDetailImpl userDetail)
     {
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-        if(jwtValidate != 0L){
-            List<CartResponseDto> cartList = cartService.getCartList(jwtValidate);
-            return ResponseEntity.ok(cartList);
+        List<CartResponseDto> cartList = cartService.getCartList(userDetail.getId());
+        return ResponseEntity.ok(cartList);
 
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
-    }
-
-    // 장바구니 추가
-    @PostMapping("/cart-add")
-    public ResponseEntity<?> cartRegistration(
-            @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-            HttpServletResponse res,
-            @RequestBody CartRequestDto cartRequestDto
-    )
-    {
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-        if(jwtValidate != 0L){
-            List<CartResponseDto> cartList = cartService.cartRegistration(jwtValidate, cartRequestDto);
-            return ResponseEntity.ok(cartList);
-
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
     }
 
     // 장바구니 업데이트
     @PutMapping("/cart-update")
     public ResponseEntity<?> cartUpdate(
-            @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-            HttpServletResponse res,
+            @AuthenticationPrincipal UserDetailImpl userDetail,
             @RequestBody CartRequestDto cartRequestDto
     )
     {
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-        if(jwtValidate != 0L){
-            List<CartResponseDto> cartList = cartService.cartUpdate(jwtValidate, cartRequestDto);
-            return ResponseEntity.ok(cartList);
-
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
+        List<CartResponseDto> cartList = cartService.cartUpdate(userDetail.getId(), cartRequestDto);
+        return ResponseEntity.ok(cartList);
     }
+
 
     // 장바구니 삭제
     @DeleteMapping("/cart-delete")
     public ResponseEntity<?> cartDelete(
-            @CookieValue(value = JwtUtil.AUTHORIZATION_HEADER, required = false) String tokenValue,
-            HttpServletResponse res,
+            @AuthenticationPrincipal UserDetailImpl userDetail,
             @RequestBody CartRequestDto cartRequestDto
     )
     {
-        Long jwtValidate = jwtUtil.validateToken(tokenValue, res);
-        if(jwtValidate != 0L){
-            List<CartResponseDto> cartList = cartService.cartDelete(jwtValidate, cartRequestDto);
-            return ResponseEntity.ok(cartList);
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FOUND).header(HttpHeaders.LOCATION, "/user/login").build();
-        }
+        List<CartResponseDto> cartList = cartService.cartDelete(userDetail.getId(), cartRequestDto);
+        return ResponseEntity.ok(cartList);
     }
 }

@@ -97,40 +97,17 @@ public class UserService {
         return new Response(ResponseCode.EMAIL_VERIFICATION_SUCCESS);
     }
 
-    @Transactional
-    public Response login(LoginRequestDto loginRequestDto, HttpServletResponse res) {
+    public Response login(User user) {
 
-        String email = loginRequestDto.getEmail();
-        String password = loginRequestDto.getPassword();
-
-        // 사용자 확인
-        Optional<User> checkUser = userRepository.findByEmail(email);
-        if(checkUser.isPresent()){
-            
-            User user = checkUser.get();
-
-            // 이메일 인증을 진행하지 않은 경우
-            if(!user.getEmailVerifiedStatus()){
-                // 만료 시간이 지나지 않았으면 인증 확인 응답
-                if(checkExpirationTime(user, "unUpdate")){
-                    return new Response(ResponseCode.REQUIRE_VERIFICATION_EMAIL);
-                }
-                else{
-                    return new Response(ResponseCode.RE_VERIFICATION_EMAIL);
-                }
+        // 이메일 인증을 진행하지 않은 경우
+        if(!user.getEmailVerifiedStatus()){
+            // 만료 시간이 지나지 않았으면 인증 확인 응답
+            if(checkExpirationTime(user, "unUpdate")){
+                return new Response(ResponseCode.REQUIRE_VERIFICATION_EMAIL);
             }
-
-            // 비밀번호 확인
-            if(!passwordEncoder.matches(password, user.getPassword())){
-                return new Response(ResponseCode.USER_PASSWORD_WRONG);
+            else{
+                return new Response(ResponseCode.RE_VERIFICATION_EMAIL);
             }
-
-            // JWT 생성 및 쿠키에 저장 후 Response 객체에 추가
-            String token = jwtUtil.createToken(String.valueOf(user.getId()));
-            jwtUtil.addJwtToCookie(token, res);
-        }
-        else{
-            return new Response(ResponseCode.USER_NOT_FOUND);
         }
 
         return new Response(ResponseCode.USER_LOGIN_SUCCESS);

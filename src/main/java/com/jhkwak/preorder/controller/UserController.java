@@ -4,11 +4,13 @@ import com.jhkwak.preorder.dto.user.LoginRequestDto;
 import com.jhkwak.preorder.dto.user.SignupRequestDto;
 import com.jhkwak.preorder.entity.Response;
 import com.jhkwak.preorder.jwt.JwtUtil;
+import com.jhkwak.preorder.security.UserDetailImpl;
 import com.jhkwak.preorder.service.user.UserService;
 import com.jhkwak.preorder.service.user.WishListService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,7 +21,15 @@ public class UserController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
-    private final WishListService wishListService;
+
+    // 회원가입
+    @GetMapping("/signup-page")
+    public String signup(){
+
+        return "/user/signup";
+    }
+
+
     // 회원가입
     @PostMapping("/signup")
     @ResponseBody
@@ -31,7 +41,7 @@ public class UserController {
     }
 
     // 로그인 페이지
-    @GetMapping("/login")
+    @GetMapping("/login-page")
     public String loginPage(){
 
         return "/user/login";
@@ -39,11 +49,11 @@ public class UserController {
     }
     
     // 로그인
-    @PostMapping("/login")
+    @GetMapping("/login-email-verification")
     @ResponseBody
-    public ResponseEntity<?> login(LoginRequestDto loginRequestDto, HttpServletResponse res){
+    public ResponseEntity<?> login(@AuthenticationPrincipal UserDetailImpl userDetails){
 
-        Response response = userService.login(loginRequestDto, res);
+        Response response = userService.login(userDetails.getUser());
 
         return ResponseEntity.ok(response);
     }
@@ -58,7 +68,7 @@ public class UserController {
 
         return ResponseEntity.ok().build();
     }
-    
+
     
     
     // 이메일 인증

@@ -24,8 +24,7 @@ public class CartService {
     private final CartRepository cartRepository;
 
     public List<CartResponseDto> getCartList(Long userId) {
-        User user = findByUser(userId);
-
+        User user = findByuser(userId);
         List<Cart> cartLists = user.getCarts();
 
         return cartLists.stream()
@@ -39,14 +38,14 @@ public class CartService {
 
     }
 
-    
     // 장바구니 등록
     @Transactional
     public List<CartResponseDto> cartRegistration(Long userId, CartRequestDto cartRequestDto) {
-        User user = findByUser(userId);
+
+        User user = findByuser(userId);
         Product product = findByProduct(cartRequestDto.getProductId());
 
-        Optional<Cart> cartExist = cartRepository.findByUserIdAndProductId(user.getId(), product.getId());
+        Optional<Cart> cartExist = cartRepository.findByUserIdAndProductId(userId, product.getId());
         // 장바구니에 동일한 상품이 존재하면 수량 더해서 업데이트
         if(cartExist.isPresent()){
             Cart cart = cartExist.get();
@@ -66,10 +65,9 @@ public class CartService {
     @Transactional
     public List<CartResponseDto> cartUpdate(Long userId, CartRequestDto cartRequestDto) {
 
-        User user = findByUser(userId);
         Product product = findByProduct(cartRequestDto.getProductId());
 
-        Optional<Cart> cartExist = cartRepository.findByUserIdAndProductId(user.getId(), product.getId());
+        Optional<Cart> cartExist = cartRepository.findByUserIdAndProductId(userId, product.getId());
         // 장바구니에 동일한 상품이 존재하면 수량 업데이트
         if(cartExist.isPresent()){
             Cart cart = cartExist.get();
@@ -82,10 +80,9 @@ public class CartService {
     // 장바구니 삭제
     public List<CartResponseDto> cartDelete(Long userId, CartRequestDto cartRequestDto) {
 
-        User user = findByUser(userId);
         Product product = findByProduct(cartRequestDto.getProductId());
 
-        Optional<Cart> cartExist = cartRepository.findByUserIdAndProductId(user.getId(), product.getId());
+        Optional<Cart> cartExist = cartRepository.findByUserIdAndProductId(userId, product.getId());
         // 장바구니에 상품이 있으면 상품 삭제
         if(cartExist.isPresent()){
             cartRepository.delete(cartExist.get());
@@ -94,7 +91,7 @@ public class CartService {
         return getCartList(userId);
     }
 
-    private User findByUser(Long userId){
+    private User findByuser(Long userId) {
         return userRepository.findById(userId).get();
     }
 

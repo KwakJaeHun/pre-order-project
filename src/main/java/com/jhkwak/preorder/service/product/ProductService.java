@@ -58,8 +58,7 @@ public class ProductService {
 
     }
 
-    public void wishAdd(Long userId, WishRequestDto wishRequestDto) {
-        User user = userRepository.findById(userId).get();
+    public void wishAdd(User user, WishRequestDto wishRequestDto) {
         Product product = productRepository.findById(wishRequestDto.getProductId()).get();
 
         WishList wishList = new WishList(user, product);

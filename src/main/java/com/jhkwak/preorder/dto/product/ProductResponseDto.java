@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @Getter @Setter
 @NoArgsConstructor
 public class ProductResponseDto {
+    private Long productId;
     private String name;
     private Long price;
     private String thumbnailImage;
@@ -18,6 +19,7 @@ public class ProductResponseDto {
     private Character bestStatus;
 
     public ProductResponseDto(Product product){
+        this.productId = product.getId();
         this.name = product.getName();
         this.price = product.getPrice();
         this.thumbnailImage = product.getThumbnailImage();

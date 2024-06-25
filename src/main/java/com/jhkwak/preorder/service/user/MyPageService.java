@@ -20,13 +20,14 @@ public class MyPageService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public List<UserResponseDto> getUserInfo(Long info) {
-        return userRepository.findById(info).stream().map(UserResponseDto::new).toList();
+    public List<UserResponseDto> getUserInfo(Long userId) {
+        return userRepository.findById(userId).stream().map(UserResponseDto::new).toList();
     }
 
     @Transactional
-    public boolean updateUserInfo(Long info, InfoUpdateRequestDto infoUpdateRequestDto) {
-        User user = userRepository.findById(info).get();
+    public boolean updateUserInfo(Long Id, InfoUpdateRequestDto infoUpdateRequestDto) {
+
+        User user = userRepository.findById(Id).get();
 
         if((infoUpdateRequestDto.getAddress() != null)){
             user.setAddress(infoUpdateRequestDto.getAddress());

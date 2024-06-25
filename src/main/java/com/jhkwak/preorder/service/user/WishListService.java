@@ -20,10 +20,9 @@ public class WishListService {
     private final WishListRepository wishListRepository;
 
     public List<WishListResponseDto> getWishList(Long userId) {
-
         User user = userRepository.findById(userId).get();
-
         List<WishList> wishLists = user.getWishes();
+        System.out.println(wishLists);
 
         return wishLists.stream()
                 .map(wishList -> new WishListResponseDto(
@@ -41,11 +40,11 @@ public class WishListService {
         //             )).toList();
     }
 
-    public List<WishListResponseDto> wishDelete(Long userId, WishRequestDto wishRequestDto) {
-        WishList wish = wishListRepository.findByUserIdAndProductId(userId, wishRequestDto.getProductId());
+    public List<WishListResponseDto> wishDelete(User user, WishRequestDto wishRequestDto) {
+        WishList wish = wishListRepository.findByUserIdAndProductId(user.getId(), wishRequestDto.getProductId());
 
         wishListRepository.delete(wish);
 
-        return getWishList(userId);
+        return getWishList(user.getId());
     }
 }
