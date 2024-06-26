@@ -25,7 +25,7 @@ public class ProductStock {
     @Column
     private int stockQuantity;
 
-    public ProductStock(Product product, int stockQuantity) {
+    public ProductStock(int stockQuantity) {
         this.stockQuantity = stockQuantity;
     }
 }

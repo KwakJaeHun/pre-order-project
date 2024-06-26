@@ -51,7 +51,7 @@ public class ProductService {
         int stockQuantity = productRegRequestDto.getStockQuantity();
 
         Product product = new Product(name, price, description, descriptionImage, thumbnailImage, soldOutStatus, newStatus, bestStatus);
-        ProductStock productStock = new ProductStock(product, stockQuantity);
+        ProductStock productStock = new ProductStock(stockQuantity);
         product.setProductStock(productStock);
 
         return productRepository.save(product);

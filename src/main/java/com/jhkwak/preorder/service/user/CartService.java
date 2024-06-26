@@ -31,8 +31,8 @@ public class CartService {
                 .map(cartList -> new CartResponseDto(
                         cartList.getProduct().getId(),
                         cartList.getProduct().getName(),
-                        cartList.getCount(),
-                        cartList.getProduct().getPrice() * cartList.getCount(),
+                        cartList.getQuantity(),
+                        cartList.getProduct().getPrice() * cartList.getQuantity(),
                         cartList.getProduct().getProductStock().getStockQuantity())
                 ).toList();
 
@@ -49,12 +49,12 @@ public class CartService {
         // 장바구니에 동일한 상품이 존재하면 수량 더해서 업데이트
         if(cartExist.isPresent()){
             Cart cart = cartExist.get();
-            int sumCount = cart.getCount() + cartRequestDto.getCount();
-            cart.setCount(sumCount);
+            int sumQuantity = cart.getQuantity() + cartRequestDto.getQuantity();
+            cart.setQuantity(sumQuantity);
         }
         // 없으면 새로 등록
         else{
-            Cart cart = new Cart(user, product, cartRequestDto.getCount());
+            Cart cart = new Cart(user, product, cartRequestDto.getQuantity());
             cartRepository.save(cart);
         }
 
@@ -71,22 +71,26 @@ public class CartService {
         // 장바구니에 동일한 상품이 존재하면 수량 업데이트
         if(cartExist.isPresent()){
             Cart cart = cartExist.get();
-            cart.setCount(cartRequestDto.getCount());
+            cart.setQuantity(cartRequestDto.getQuantity());
         }
 
         return getCartList(userId);
     }
     
     // 장바구니 삭제
+    // @Transactional
     public List<CartResponseDto> cartDelete(Long userId, CartRequestDto cartRequestDto) {
 
-        Product product = findByProduct(cartRequestDto.getProductId());
-
-        Optional<Cart> cartExist = cartRepository.findByUserIdAndProductId(userId, product.getId());
-        // 장바구니에 상품이 있으면 상품 삭제
-        if(cartExist.isPresent()){
-            cartRepository.delete(cartExist.get());
-        }
+         Optional<Cart> cartExist = cartRepository.findByUserIdAndProductId(userId, cartRequestDto.getProductId());
+         // 장바구니에 상품이 있으면 상품 삭제
+         if(cartExist.isPresent()){
+             cartRepository.delete(cartExist.get());
+         }
+        
+        // @Transactional 어노테이션을 달아도 삭제가 안됨
+        // JPA 메서드를 사용시 Transactional 을 달아줘야하는데 
+        // getCartList에서 User의 CartList 를 조회하며 cart 테이블이 최신으로 유지 되면서 삭제가 안된다고 생각됨
+        // cartRepository.deleteByUserIdAndProductId(userId, cartRequestDto.getProductId());
 
         return getCartList(userId);
     }

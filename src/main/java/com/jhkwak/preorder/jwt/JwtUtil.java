@@ -84,7 +84,7 @@ public class JwtUtil {
     }
 
     // JWT 검증
-    public boolean validateToken(String token) {
+    public boolean validateToken(String token, HttpServletResponse res) {
         
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
@@ -98,6 +98,8 @@ public class JwtUtil {
         } catch (IllegalArgumentException e) {
             logger.error("JWT claims is empty, 잘못된 JWT 토큰 입니다.");
         }
+
+        jwtDelete(res);
 
         return false;
     }

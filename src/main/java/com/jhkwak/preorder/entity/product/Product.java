@@ -1,6 +1,8 @@
 package com.jhkwak.preorder.entity.product;
 
 import com.jhkwak.preorder.entity.TimeStamp;
+import com.jhkwak.preorder.entity.order.OrderListDetail;
+import com.jhkwak.preorder.entity.user.Cart;
 import com.jhkwak.preorder.entity.user.WishList;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -49,6 +51,12 @@ public class Product extends TimeStamp {
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<WishList> wishes;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Cart> cartList;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderListDetail> orderListDetails;
 
     public Product
     (

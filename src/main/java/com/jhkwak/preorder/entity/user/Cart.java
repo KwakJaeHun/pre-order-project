@@ -2,7 +2,6 @@ package com.jhkwak.preorder.entity.user;
 
 import com.jhkwak.preorder.entity.product.Product;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,11 +25,11 @@ public class Cart {
     private Product product;
 
     @Column(nullable = false)
-    private int count;
+    private int quantity;
 
-    public Cart(User user, Product product, int count) {
+    public Cart(User user, Product product, int quantity) {
         this.user = user;
         this.product = product;
-        this.count = count;
+        this.quantity = quantity;
     }
 }

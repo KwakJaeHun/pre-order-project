@@ -1,10 +1,12 @@
-package com.jhkwak.preorder.dto.user;
+package com.jhkwak.preorder.dto.order;
 
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter
-public class CartRequestDto {
+public class OrderListRequestDto {
+
     private Long productId;
     private int quantity;
+    private Long price;
 }

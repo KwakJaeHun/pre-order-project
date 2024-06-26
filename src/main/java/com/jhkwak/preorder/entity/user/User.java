@@ -1,6 +1,7 @@
 package com.jhkwak.preorder.entity.user;
 
 import com.jhkwak.preorder.entity.TimeStamp;
+import com.jhkwak.preorder.entity.order.OrderList;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,6 +49,9 @@ public class User extends TimeStamp {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Cart> carts;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderList> orderList;
 
     public User(
         String name,
