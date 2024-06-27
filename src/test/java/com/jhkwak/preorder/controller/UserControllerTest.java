@@ -1,6 +1,7 @@
 package com.jhkwak.preorder.controller;
 
 import com.jhkwak.preorder.dto.user.SignupRequestDto;
+import com.jhkwak.preorder.jwt.JwtUtil;
 import com.jhkwak.preorder.service.user.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,9 @@ class UserControllerTest {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     @Test
     @DisplayName("회원가입 테스트")
     @Transactional
@@ -26,7 +30,7 @@ class UserControllerTest {
         requestDto.setPassword("test");
         requestDto.setPhone("01037848809");
 
-        UserController us = new UserController(userService);
+        UserController us = new UserController(userService, jwtUtil);
         System.out.println(us.signup(requestDto));
 
     }

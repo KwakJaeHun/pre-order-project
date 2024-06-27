@@ -3,9 +3,14 @@ package com.jhkwak.preorder.controller;
 import com.jhkwak.preorder.dto.user.LoginRequestDto;
 import com.jhkwak.preorder.dto.user.SignupRequestDto;
 import com.jhkwak.preorder.entity.Response;
+import com.jhkwak.preorder.jwt.JwtUtil;
+import com.jhkwak.preorder.security.UserDetailImpl;
 import com.jhkwak.preorder.service.user.UserService;
+import com.jhkwak.preorder.service.user.WishListService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,23 +20,65 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final JwtUtil jwtUtil;
 
+    // 회원가입
+    @GetMapping("/signup-page")
+    public String signup(){
 
-    @PostMapping("/signup")
-    @ResponseBody
-    public Response signup(SignupRequestDto requestDto){
-        return userService.signup(requestDto);
+        return "/user/signup";
     }
 
-    @PostMapping("/login")
-    public String login(LoginRequestDto loginRequestDto, HttpServletResponse res){
-        try{
-            userService.login(loginRequestDto, res);
-        }
-        catch(Exception e){
-            return "redirect:/user/login-page?error";
-        }
 
-        return "redirect:/";
+    // 회원가입
+    @PostMapping("/signup")
+    @ResponseBody
+    public ResponseEntity<?> signup(SignupRequestDto requestDto){
+
+        Response response = userService.signup(requestDto);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 로그인 페이지
+    @GetMapping("/login-page")
+    public String loginPage(){
+
+        return "/user/login";
+
+    }
+    
+    // 로그인
+    @GetMapping("/login-email-verification")
+    @ResponseBody
+    public ResponseEntity<?> login(@AuthenticationPrincipal UserDetailImpl userDetails){
+
+        Response response = userService.login(userDetails.getUser());
+
+        return ResponseEntity.ok(response);
+    }
+
+    // 로그아웃
+    @GetMapping("/logout")
+    @ResponseBody
+    public ResponseEntity<?> logout(HttpServletResponse response){
+
+        // jwt 삭제
+        jwtUtil.jwtDelete(response);
+
+        return ResponseEntity.ok().build();
+    }
+
+    
+    
+    // 이메일 인증
+    @GetMapping("/verify")
+    @ResponseBody
+    public ResponseEntity<?> emailVerification(@RequestParam String token){
+
+        Response response = userService.emailVerification(token);
+
+        return ResponseEntity.ok(response);
+
     }
 }
