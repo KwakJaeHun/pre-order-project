@@ -1,19 +1,20 @@
 package com.jhkwak.preorder.service.order;
 
-import com.jhkwak.preorder.dto.order.OrderCheckOutListResponseDto;
-import com.jhkwak.preorder.dto.order.OrderListRequestDto;
-import com.jhkwak.preorder.dto.order.OrderListResponseDto;
-import com.jhkwak.preorder.dto.order.OrderProductResponseDto;
+import com.jhkwak.preorder.dto.order.*;
 import com.jhkwak.preorder.dto.user.UserResponseDto;
+import com.jhkwak.preorder.entity.Response;
+import com.jhkwak.preorder.entity.ResponseCode;
 import com.jhkwak.preorder.entity.order.OrderList;
 import com.jhkwak.preorder.entity.order.OrderListDetail;
 import com.jhkwak.preorder.entity.product.Product;
 import com.jhkwak.preorder.entity.product.ProductStock;
+import com.jhkwak.preorder.entity.refund.RefundList;
 import com.jhkwak.preorder.entity.user.User;
 import com.jhkwak.preorder.repository.order.OrderListDetailRepository;
 import com.jhkwak.preorder.repository.order.OrderListRepository;
 import com.jhkwak.preorder.repository.product.ProductRepository;
 import com.jhkwak.preorder.repository.product.ProductStockRepository;
+import com.jhkwak.preorder.repository.refund.RefundRepository;
 import com.jhkwak.preorder.repository.user.CartRepository;
 import com.jhkwak.preorder.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +34,42 @@ public class OrderService {
     private final OrderListRepository orderListRepository;
     private final CartRepository cartRepository;
     private final OrderListDetailRepository orderListDetailRepository;
+    private final RefundRepository refundRepository;
 
+    // 주문 정보 list
+    public List<OrderListResponseDto> orderList(Long userId) {
+
+        List<OrderList> orderLists = orderListRepository.findByUserId(userId);
+
+        return orderLists.stream()
+                .map(orderList -> {
+                    OrderListResponseDto dto = new OrderListResponseDto();
+                    dto.setOrderListId(orderList.getId());
+                    dto.setStatus(orderList.getStatus());
+                    dto.setCreatedAt(orderList.getCreatedAt());
+                    dto.setOrderListDetails(orderList.getOrderListDetails());
+
+                    // JsonIgnore Annotation 으로 대체
+//                        ArrayList<Map<String, Object>> orderListDetails = new ArrayList<>();
+//                        orderList.getOrderListDetails().stream()
+//                                .forEach(orderListDetail -> {
+//                                    Map<String, Object> detailMap = new HashMap<>();
+//                                    detailMap.put("orderListDetailId", orderListDetail.getId());
+//                                    detailMap.put("productId", orderListDetail.getProduct().getId());
+//                                    detailMap.put("quantity", orderListDetail.getQuantity());
+//                                    detailMap.put("price", orderListDetail.getPrice());
+//                                    detailMap.put("status", orderListDetail.getStatus());
+//                                    detailMap.put("deliveryStatus", orderListDetail.getDeliveryStatus());
+//                                    detailMap.put("creatAt", orderListDetail.getCreatedAt());
+//                                    orderListDetails.add(detailMap);
+//                                });
+//
+//                        dto.setOrderListDetails(orderListDetails);
+
+                    return dto;
+                })
+                .toList();
+    }
 
     // 주문 진행 페이지
     public OrderCheckOutListResponseDto checkOutPage(Long userId, List<String> items) {
@@ -75,7 +107,8 @@ public class OrderService {
         // 주문 정보 return
         return new OrderCheckOutListResponseDto(userResponseDto, orderProductResponseDto);
     }
-
+    
+    // 주문 진행
     @Transactional
     public void checkOut(Long userId, List<OrderListRequestDto> orderListRequestDto) {
         
@@ -89,9 +122,7 @@ public class OrderService {
                     OrderListDetail orderListDetail = new OrderListDetail(
                             product,
                             orderListData.getQuantity(),
-                            orderListData.getPrice(),
-                            'Y',
-                            'S'
+                            orderListData.getPrice()
                     );
                     return orderListDetail;
                 })
@@ -124,61 +155,130 @@ public class OrderService {
             }
         }
     }
+    
+    // 주문 취소
+    @Transactional
+    public boolean orderCancel(Long userId, OrderCancelRefundRequestDto cancelDto) {
+        OrderList orderList = orderListRepository.findByUserIdAndId(userId, cancelDto.getOrderListId());
+        
+        int cancelCount = 0;
 
-    // 주문 정보 list
-    public List<OrderListResponseDto> orderList(Long userId) {
+        for(OrderListDetail orderListDetail : orderList.getOrderListDetails()){
 
-        List<OrderList> orderLists = orderListRepository.findByUserId(userId);
+            // 취소 품목 카운팅
+            if(orderListDetail.getStatus() == 'C'){
+                cancelCount++;
+            }
 
-        return orderLists.stream()
-                    .map(orderList -> {
-                        OrderListResponseDto dto = new OrderListResponseDto();
-                        dto.setOrderListId(orderList.getId());
-                        dto.setStatus(orderList.getStatus());
-                        dto.setCreatedAt(orderList.getCreatedAt());
-                        dto.setOrderListDetails(orderList.getOrderListDetails());
+            // 상세 아이디가 같고 배송 전 상태이면 취소 진행
+            if(Objects.equals(orderListDetail.getId(), cancelDto.getOrderListDetailId()) && orderListDetail.getDeliveryStatus() == 'S'){
+                orderListDetail.setStatus('C');
+                orderListDetail.setDeliveryStatus('C');
+                cancelCount++;
 
-                        // JsonIgnore Annotation 으로 대체
-//                        ArrayList<Map<String, Object>> orderListDetails = new ArrayList<>();
-//                        orderList.getOrderListDetails().stream()
-//                                .forEach(orderListDetail -> {
-//                                    Map<String, Object> detailMap = new HashMap<>();
-//                                    detailMap.put("orderListDetailId", orderListDetail.getId());
-//                                    detailMap.put("productId", orderListDetail.getProduct().getId());
-//                                    detailMap.put("quantity", orderListDetail.getQuantity());
-//                                    detailMap.put("price", orderListDetail.getPrice());
-//                                    detailMap.put("status", orderListDetail.getStatus());
-//                                    detailMap.put("deliveryStatus", orderListDetail.getDeliveryStatus());
-//                                    detailMap.put("creatAt", orderListDetail.getCreatedAt());
-//                                    orderListDetails.add(detailMap);
-//                                });
-//
-//                        dto.setOrderListDetails(orderListDetails);
+                // 재고 복구
+                ProductStock productStock = productStockRepository.findById(orderListDetail.getProduct().getId()).get();
+                productStock.setStockQuantity(productStock.getStockQuantity() + orderListDetail.getQuantity());
+            }
+            else if(Objects.equals(orderListDetail.getId(), cancelDto.getOrderListDetailId()) && orderListDetail.getDeliveryStatus() != 'S'){
+                return false;
+            }
+        }
 
-                        return dto;
-                    })
-                .toList();
+        // orderList안의 orderListDetail이 전부 취소 되었으면 orderList 상태값을 C로 변경
+        if(orderList.getOrderListDetails().size() == cancelCount){
+            orderList.setStatus('C');
+        }
+
+        return true;
     }
     
-    // 자정에 배송 상태 없데이트
+    // 주문 반품
     @Transactional
-    public void deliveryStatusUpdate() {
+    public boolean orderRefund(Long userId, OrderCancelRefundRequestDto refundDto) {
+
+        OrderListDetail orderListDetail = orderListDetailRepository.findById(refundDto.getOrderListDetailId()).get();
+
         LocalDate now = LocalDate.now();
 
-        // 배송 중으로 업데이트 
-        List<OrderListDetail> minusOneDay = orderListDetailRepository
-                .findByOrderConfirmAtBefore(now);
+        // 상세 아이디가 같을때
+        if(Objects.equals(orderListDetail.getId(), refundDto.getOrderListDetailId())) {
+            // 배송이 완료 되었고 오늘이 배송 완료일 + 2일 보다 작으면 반품 진행 상태로 업데이트
+            if(orderListDetail.getDeliveryStatus() == 'Y' && now.isBefore(orderListDetail.getDeliveryCompleteOn().plusDays(2))){
+                orderListDetail.setStatus('P');
+                orderListDetail.setDeliveryStatus('P');
 
-        for (OrderListDetail detail : minusOneDay) {
+                // 반품 목록 등록
+                User user = userRepository.findById(userId).get();
+                RefundList refundList = new RefundList(user, orderListDetail.getProduct(), orderListDetail, orderListDetail.getQuantity(), orderListDetail.getPrice());
+
+                refundRepository.save(refundList);
+            }
+            else{
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
+    // 자정에 배송 상태 없데이트, 반품 신청 후 하루가 지났을때 반품 완료 업데이트 , 재고 복구 스케줄러
+    @Transactional
+    public void deliveryStatusUpdate() {
+
+        LocalDate now = LocalDate.now();
+
+        // 접수인 상품 배송 중으로 업데이트
+        List<OrderListDetail> delivery = orderListDetailRepository
+                .findByOrderConfirmOnBeforeAndDeliveryStatus(now, 'S');
+
+        for (OrderListDetail detail : delivery) {
             detail.setDeliveryStatus('D');
         }
 
-        // 배송 완료로 업데이트
-        List<OrderListDetail> minusTwoDay = orderListDetailRepository
-                .findByOrderConfirmAtBefore(now.minusDays(1));
+        // 배송 중인 상품 배송 완료로 업데이트
+        List<OrderListDetail> deliveryComplete = orderListDetailRepository
+                .findByOrderConfirmOnBeforeAndDeliveryStatus(now.minusDays(1), 'D');
 
-        for (OrderListDetail detail : minusTwoDay) {
+        for (OrderListDetail detail : deliveryComplete) {
             detail.setDeliveryStatus('Y');
+            detail.setDeliveryCompleteOn(now);
+        }
+
+        // 반품 신청 후 하루가 지났을때 반품 완료 업데이트 , 재고 복구 스케줄러
+        List<RefundList> refundListComplete = refundRepository
+                .findByRefundRequestOnBeforeAndStatus(now, 'S');
+        
+        for (RefundList refundListDetail : refundListComplete) {
+            
+            // 반품 테이블 반품 완료 처리
+            refundListDetail.setStatus('Y');
+            
+            // 주문 상세 테이블 반품 완료 처리
+            OrderListDetail orderListDetail = orderListDetailRepository.findById(refundListDetail.getOrderListDetail().getId()).get();
+            orderListDetail.setDeliveryStatus('R');
+            orderListDetail.setStatus('R');
+
+            // 재고 복구
+            ProductStock productStock = productStockRepository.findById(orderListDetail.getProduct().getId()).get();
+            productStock.setStockQuantity(productStock.getStockQuantity() + orderListDetail.getQuantity());
+
+            List<OrderListDetail> orderListDetails = orderListDetailRepository.findByOrderListId(orderListDetail.getOrderList().getId());
+            
+            // 주문 리스트 테이블 전체 반품 완료되었을때 반품 완료 처리
+            boolean refundStatus = true;
+            Long orderListId = 0L;
+            for(OrderListDetail orderListDetailAll : orderListDetails){
+                orderListId = orderListDetailAll.getOrderList().getId();
+                if(orderListDetailAll.getStatus() != 'R'){
+                    refundStatus = false;
+                }
+            }
+
+            if(refundStatus){
+                OrderList orderList = orderListRepository.findById(orderListId).get();
+                orderList.setStatus('R');
+            }
         }
 
     }

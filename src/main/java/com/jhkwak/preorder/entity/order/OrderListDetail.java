@@ -22,7 +22,7 @@ public class OrderListDetail extends TimeStamp {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "pro_duct_id", referencedColumnName = "id", nullable = false)
+    @JoinColumn(name = "product_id", referencedColumnName = "id", nullable = false)
     @JsonIgnore
     private Product product;
 
@@ -37,23 +37,27 @@ public class OrderListDetail extends TimeStamp {
     @Column(nullable = false)
     private Long price;
 
+    // Y : 주문완료, C : 취소,  P : 반품 진행 중, R : 반품 완료
     @Column(nullable = false)
     private Character status;
 
+    // S : 접수,  D : 배송중, Y : 배송완료
     @Column(nullable = false)
-    @ColumnDefault("'S'")
     private Character deliveryStatus;
 
     @Column(nullable = false)
     @Temporal(TemporalType.DATE)
-    private LocalDate orderConfirmAt;
+    private LocalDate orderConfirmOn;
 
-    public OrderListDetail(Product product, int quantity, Long price, Character status, Character deliveryStatus) {
+    @Temporal(TemporalType.DATE)
+    private LocalDate deliveryCompleteOn;
+
+    public OrderListDetail(Product product, int quantity, Long price) {
         this.product = product;
         this.price = price;
         this.quantity = quantity;
-        this.status = status;
-        this.deliveryStatus = deliveryStatus;
-        this.orderConfirmAt = LocalDate.now();
+        this.status = 'Y';
+        this.deliveryStatus = 'S';
+        this.orderConfirmOn = LocalDate.now();
     }
 }

@@ -1,12 +1,13 @@
 package com.jhkwak.preorder.controller;
 
+import com.jhkwak.preorder.dto.order.OrderCancelRefundRequestDto;
 import com.jhkwak.preorder.dto.order.OrderCheckOutListResponseDto;
 import com.jhkwak.preorder.dto.order.OrderListRequestDto;
 import com.jhkwak.preorder.dto.order.OrderListResponseDto;
-import com.jhkwak.preorder.entity.order.OrderList;
 import com.jhkwak.preorder.security.UserDetailImpl;
 import com.jhkwak.preorder.service.order.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,16 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+
+    // 주문리스트
+    @GetMapping("/order-list")
+    public ResponseEntity<?> orderList(
+            @AuthenticationPrincipal UserDetailImpl userDetail
+    )
+    {
+        List<OrderListResponseDto> orderListResponseDto = orderService.orderList(userDetail.getId());
+        return ResponseEntity.ok(orderListResponseDto);
+    }
     
     // 주문 진행 페이지
      @GetMapping("/check-out")
@@ -42,13 +53,35 @@ public class OrderController {
         return ResponseEntity.ok().build();
     }
 
-    // 주문리스트
-    @GetMapping("/order-list")
-    public ResponseEntity<?> orderList(
-            @AuthenticationPrincipal UserDetailImpl userDetail
+    // 주문 취소
+    @PutMapping("/cancel")
+    public ResponseEntity<?> orderCancel(
+            @AuthenticationPrincipal UserDetailImpl userDetail,
+            @RequestBody OrderCancelRefundRequestDto orderCancelRefundRequestDto
+            )
+    {
+        boolean isCanceled = orderService.orderCancel(userDetail.getId(), orderCancelRefundRequestDto);
+        if(isCanceled){
+            return new ResponseEntity<>("취소 성공", HttpStatus.OK);
+        }
+        else{
+            return new ResponseEntity<>("취소 실패", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    // 반품 신청
+    @PutMapping("/refund")
+    public ResponseEntity<?> orderRefund(
+            @AuthenticationPrincipal UserDetailImpl userDetail,
+            @RequestBody OrderCancelRefundRequestDto orderCancelRefundRequestDto
     )
     {
-        List<OrderListResponseDto> orderListResponseDto = orderService.orderList(userDetail.getId());
-        return ResponseEntity.ok(orderListResponseDto);
+        boolean isRefunded = orderService.orderRefund(userDetail.getId(), orderCancelRefundRequestDto);
+        if(isRefunded){
+            return new ResponseEntity<>("반품이 접수 되었습니다.", HttpStatus.OK);
+        }
+        else{
+            return new ResponseEntity<>("배송완료 후 2일 이상된 상품은 반품이 불가합니다.", HttpStatus.BAD_REQUEST);
+        }
     }
 }

@@ -16,7 +16,7 @@ public class ScheduledTasks {
 
     // 매일 자정에 실행
     // 배송중, 배송 완료 상태값 업데이트 스케줄러
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(cron = "*/1 * * * * ?")
     public void performTaskAtMidnight() {
         orderService.deliveryStatusUpdate();
         System.out.println("스케줄러 접근");
